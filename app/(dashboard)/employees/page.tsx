@@ -2,8 +2,6 @@
 
 import { useRole } from "@/lib/role-context";
 import { useState, useMemo } from "react";
-import { employees } from "@/lib/data/employees";
-import { filterEmployeesByRole, hasPermission, getPageTitle } from "@/lib/utils/role-filter";
 import {
   Card,
   CardContent,
@@ -42,11 +40,9 @@ import {
   Users,
   Shield,
   UserCog,
-  Mail,
-  Phone,
-  MapPin,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { employees } from "@/lib/data/employees";
 
 export default function EmployeesPage() {
   const { user } = useRole();
@@ -55,33 +51,71 @@ export default function EmployeesPage() {
   if (!user) return null;
 
   // Filter employees based on user role
-  const filteredByRole = useMemo(
-    () => filterEmployeesByRole(employees, user),
-    [user]
-  );
+  const filteredEmployees = useMemo(() => {
+    let result = employees;
 
-  // Further filter based on search
-  const filteredEmployees = filteredByRole.filter(
-    (employee) =>
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    switch (user.role) {
+      case "admin":
+      case "hr":
+        // Admin and HR see everyone
+        result = employees;
+        break;
+
+      case "manager":
+        // Managers see their team members + themselves
+        result = employees.filter(
+          (emp) => emp.manager === user.name || emp.email === user.email
+        );
+        break;
+
+      case "employee":
+        // Employees only see themselves
+        result = employees.filter((emp) => emp.email === user.email);
+        break;
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+      result = result.filter(
+        (emp) =>
+          emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          emp.department.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    return result;
+  }, [user, searchTerm]);
 
   // Check permissions
-  const canAddEmployee = hasPermission(user, "employee:create");
-  const canEditEmployee = hasPermission(user, "employee:edit");
-  const canDeleteEmployee = hasPermission(user, "employee:delete");
+  const canAddEmployee = user.role === "admin" || user.role === "hr";
+  const canEditEmployee =
+    user.role === "admin" || user.role === "hr" || user.role === "manager";
+  const canDeleteEmployee = user.role === "admin";
   const canExport = user.role !== "employee";
 
-  const pageTitle = getPageTitle("employees", user.role);
-  const pageDescription =
-    user.role === "employee"
-      ? "View and manage your profile information"
-      : user.role === "manager"
-      ? "Manage your team members and their information"
-      : "Manage employee records across the organization";
+  // Get page title based on role
+  const getPageTitle = () => {
+    switch (user.role) {
+      case "employee":
+        return "My Profile";
+      case "manager":
+        return "My Team";
+      default:
+        return "Employees";
+    }
+  };
+
+  const getPageDescription = () => {
+    switch (user.role) {
+      case "employee":
+        return "View your profile information";
+      case "manager":
+        return "Manage your team members and their information";
+      default:
+        return "Manage employee records and information across the organization";
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -89,9 +123,10 @@ export default function EmployeesPage() {
       <Alert className="border-primary/20 bg-primary/5">
         <Shield className="h-4 w-4" />
         <AlertDescription>
-          Viewing as <strong className="capitalize">{user.role}</strong> •{" "}
-          <strong>{filteredByRole.length}</strong> employee
-          {filteredByRole.length !== 1 ? "s" : ""} accessible
+          You are viewing as{" "}
+          <strong className="capitalize">{user.role}</strong>. You can see{" "}
+          <strong>{filteredEmployees.length}</strong> employee
+          {filteredEmployees.length !== 1 ? "s" : ""}.
         </AlertDescription>
       </Alert>
 
@@ -99,12 +134,12 @@ export default function EmployeesPage() {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            {pageTitle}
+            {getPageTitle()}
             {user.role === "manager" && (
-              <UserCog className="h-7 w-7 text-primary" />
+              <UserCog className="h-7 w-7 text-muted-foreground" />
             )}
           </h1>
-          <p className="text-muted-foreground">{pageDescription}</p>
+          <p className="text-muted-foreground">{getPageDescription()}</p>
         </div>
         <div className="flex items-center gap-2">
           {canExport && (
@@ -125,24 +160,23 @@ export default function EmployeesPage() {
       {/* Stats - Only show for admin/hr/manager */}
       {user.role !== "employee" && (
         <div className="grid gap-6 md:grid-cols-4">
-          <Card className="border-border/50 shadow-soft hover:shadow-medium transition-shadow">
+          <Card className="border-border/50 shadow-soft">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">
-                    {user.role === "manager" ? "Team Size" : "Total Employees"}
+                    {user.role === "manager" ? "Team Members" : "Total Employees"}
                   </p>
-                  <p className="text-3xl font-bold">{filteredByRole.length}</p>
-                  <p className="text-xs text-muted-foreground">Active workforce</p>
+                  <p className="text-3xl font-bold">{filteredEmployees.length}</p>
                 </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-sm">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 shadow-sm">
                   <Users className="h-6 w-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 shadow-soft hover:shadow-medium transition-shadow">
+          <Card className="border-border/50 shadow-soft">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
@@ -150,19 +184,17 @@ export default function EmployeesPage() {
                     Active
                   </p>
                   <p className="text-3xl font-bold">
-                    {filteredByRole.filter((e) => e.status === "Active").length}
+                    {filteredEmployees.filter((e) => e.status === "Active").length}
                   </p>
-                  <p className="text-xs text-muted-foreground">Currently working</p>
                 </div>
-                <Badge variant="success" className="text-sm px-3 py-1">
-                  <span className="h-2 w-2 rounded-full bg-green-600 mr-1.5 animate-pulse" />
+                <Badge variant="success" className="text-xs">
                   Active
                 </Badge>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 shadow-soft hover:shadow-medium transition-shadow">
+          <Card className="border-border/50 shadow-soft">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
@@ -170,36 +202,29 @@ export default function EmployeesPage() {
                     On Leave
                   </p>
                   <p className="text-3xl font-bold">
-                    {filteredByRole.filter((e) => e.status === "On Leave").length}
+                    {filteredEmployees.filter((e) => e.status === "On Leave").length}
                   </p>
-                  <p className="text-xs text-muted-foreground">Temporary absence</p>
                 </div>
-                <Badge variant="warning" className="text-sm px-3 py-1">
+                <Badge variant="warning" className="text-xs">
                   Leave
                 </Badge>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 shadow-soft hover:shadow-medium transition-shadow">
+          <Card className="border-border/50 shadow-soft">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-muted-foreground">
-                    Avg Performance
+                    Departments
                   </p>
                   <p className="text-3xl font-bold">
-                    {
-                      (
-                        filteredByRole.reduce((sum, e) => sum + e.performance, 0) /
-                        filteredByRole.length
-                      ).toFixed(1)
-                    }
+                    {new Set(filteredEmployees.map((e) => e.department)).size}
                   </p>
-                  <p className="text-xs text-muted-foreground">Out of 5.0</p>
                 </div>
-                <Badge variant="success" className="text-sm px-3 py-1">
-                  Excellent
+                <Badge variant="secondary" className="text-xs">
+                  Unique
                 </Badge>
               </div>
             </CardContent>
@@ -221,20 +246,20 @@ export default function EmployeesPage() {
               </CardTitle>
               <CardDescription>
                 {user.role === "employee"
-                  ? "Your personal information and employment details"
-                  : `Showing ${filteredEmployees.length} of ${filteredByRole.length} employee${filteredByRole.length !== 1 ? "s" : ""}`}
+                  ? "Your personal information and details"
+                  : `Showing ${filteredEmployees.length} employee${filteredEmployees.length !== 1 ? "s" : ""}`}
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          {/* Search and Filter - Hide for single employee view */}
-          {filteredByRole.length > 1 && (
+          {/* Search and Filter */}
+          {filteredEmployees.length > 1 && (
             <div className="flex items-center gap-2 mb-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search by name, email, department, or role..."
+                  placeholder="Search employees..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -251,14 +276,14 @@ export default function EmployeesPage() {
           <div className="rounded-lg border border-border/50 overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="font-semibold">Employee</TableHead>
-                  <TableHead className="font-semibold">Role & Department</TableHead>
-                  <TableHead className="font-semibold">Contact</TableHead>
-                  {user.role !== "employee" && <TableHead className="font-semibold">Status</TableHead>}
-                  {user.role !== "employee" && <TableHead className="font-semibold">Performance</TableHead>}
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Department</TableHead>
+                  {user.role !== "employee" && <TableHead>Status</TableHead>}
+                  <TableHead>Join Date</TableHead>
                   {canEditEmployee && (
-                    <TableHead className="text-right font-semibold">Actions</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   )}
                 </TableRow>
               </TableHeader>
@@ -267,48 +292,30 @@ export default function EmployeesPage() {
                   <TableRow>
                     <TableCell
                       colSpan={canEditEmployee ? 6 : 5}
-                      className="text-center py-12 text-muted-foreground"
+                      className="text-center py-8 text-muted-foreground"
                     >
-                      <Users className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                      <p className="text-sm">No employees found</p>
+                      No employees found
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredEmployees.map((employee) => (
-                    <TableRow key={employee.id} className="hover:bg-muted/30 transition-colors">
+                    <TableRow key={employee.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80 text-white font-semibold text-sm shadow-sm">
-                            {employee.name.split(" ").map((n) => n[0]).join("")}
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary text-white font-medium shadow-sm">
+                            {employee.name.charAt(0)}
                           </div>
                           <div>
                             <p className="font-medium">{employee.name}</p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
+                            <p className="text-xs text-muted-foreground">
                               {employee.email}
                             </p>
                           </div>
                         </div>
                       </TableCell>
+                      <TableCell>{employee.role}</TableCell>
                       <TableCell>
-                        <div className="space-y-1">
-                          <p className="font-medium text-sm">{employee.role}</p>
-                          <Badge variant="secondary" className="text-xs">
-                            {employee.department}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <p className="text-xs flex items-center gap-1 text-muted-foreground">
-                            <Phone className="h-3 w-3" />
-                            {employee.phone}
-                          </p>
-                          <p className="text-xs flex items-center gap-1 text-muted-foreground">
-                            <MapPin className="h-3 w-3" />
-                            {employee.location}
-                          </p>
-                        </div>
+                        <Badge variant="secondary">{employee.department}</Badge>
                       </TableCell>
                       {user.role !== "employee" && (
                         <TableCell>
@@ -321,23 +328,12 @@ export default function EmployeesPage() {
                           </Badge>
                         </TableCell>
                       )}
-                      {user.role !== "employee" && (
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1">
-                              <span className="font-semibold">
-                                {employee.performance}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                / 5.0
-                              </span>
-                            </div>
-                            {employee.performance >= 4.5 && (
-                              <Badge variant="success" className="text-xs">Top</Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                      )}
+                      <TableCell>
+                        {new Date(employee.joinDate).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                        })}
+                      </TableCell>
                       {canEditEmployee && (
                         <TableCell className="text-right">
                           <DropdownMenu>
@@ -357,16 +353,19 @@ export default function EmployeesPage() {
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Details
                               </DropdownMenuItem>
-                              {hasPermission(user, "employee:edit", employee) && (
+                              {(user.role === "admin" ||
+                                user.role === "hr" ||
+                                (user.role === "manager" &&
+                                  employee.manager === user.name)) && (
                                 <DropdownMenuItem>
                                   <Edit className="mr-2 h-4 w-4" />
-                                  Edit Employee
+                                  Edit
                                 </DropdownMenuItem>
                               )}
                               {canDeleteEmployee && (
                                 <>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                  <DropdownMenuItem className="text-destructive">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     Delete
                                   </DropdownMenuItem>

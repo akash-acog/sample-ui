@@ -3,6 +3,7 @@
 import type React from "react"
 import { createContext, useContext, useState } from "react"
 import type { UserRole } from "./role-config"
+import { employees } from "./data/employees"
 
 interface User {
   id: string
@@ -20,57 +21,43 @@ interface RoleContextType {
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined)
 
-// Map role to appropriate user
-const getUserByRole = (role: UserRole): User => {
-  switch (role) {
-    case "admin":
-      return {
-        id: "admin-001",
-        name: "Admin User",
-        email: "admin@company.com",
-        role: "admin",
-        avatar: "AU",
-      }
-    case "hr":
-      return {
-        id: "emp-008",
-        name: "Lisa Anderson",
-        email: "lisa.anderson@company.com",
-        role: "hr",
-        avatar: "LA",
-      }
-    case "manager":
-      return {
-        id: "emp-006",
-        name: "John Smith",
-        email: "john.smith@company.com",
-        role: "manager",
-        avatar: "JS",
-      }
-    case "employee":
-      return {
-        id: "emp-001",
-        name: "Sarah Johnson",
-        email: "sarah.johnson@company.com",
-        role: "employee",
-        avatar: "SJ",
-      }
-    default:
-      return {
-        id: "emp-001",
-        name: "Sarah Johnson",
-        email: "sarah.johnson@company.com",
-        role: "employee",
-        avatar: "SJ",
-      }
-  }
+// Map roles to actual employees
+const roleUserMap: Record<UserRole, User> = {
+  admin: {
+    id: "emp-011",
+    name: "Demo Admin",
+    email: "admin@company.com",
+    role: "admin",
+    avatar: "DA",
+  },
+  hr: {
+    id: "emp-005",
+    name: "Lisa Anderson",
+    email: "lisa.anderson@company.com",
+    role: "hr",
+    avatar: "LA",
+  },
+  manager: {
+    id: "emp-006",
+    name: "John Smith",
+    email: "john.smith@company.com",
+    role: "manager",
+    avatar: "JS",
+  },
+  employee: {
+    id: "emp-001",
+    name: "Sarah Johnson",
+    email: "sarah.johnson@company.com",
+    role: "employee",
+    avatar: "SJ",
+  },
 }
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(getUserByRole("admin"))
+  const [user, setUser] = useState<User | null>(roleUserMap.employee)
 
   const switchRole = (role: UserRole) => {
-    setUser(getUserByRole(role))
+    setUser(roleUserMap[role])
   }
 
   return <RoleContext.Provider value={{ user, setUser, switchRole }}>{children}</RoleContext.Provider>
