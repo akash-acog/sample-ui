@@ -3,7 +3,6 @@
 import type React from "react"
 import { createContext, useContext, useState } from "react"
 import type { UserRole } from "./role-config"
-import { employees } from "./data/employees"
 
 interface User {
   id: string
@@ -21,35 +20,35 @@ interface RoleContextType {
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined)
 
-// Map roles to actual employees
+// Map roles to actual employees - using IDs that match employees data
 const roleUserMap: Record<UserRole, User> = {
   admin: {
-    id: "emp-011",
-    name: "Demo Admin",
-    email: "admin@company.com",
+    id: "emp-1",
+    name: "Akash Kumar",
+    email: "akash@company.com",
     role: "admin",
-    avatar: "DA",
+    avatar: "AK",
   },
   hr: {
-    id: "emp-005",
-    name: "Lisa Anderson",
-    email: "lisa.anderson@company.com",
+    id: "emp-2",
+    name: "Priya Sharma",
+    email: "priya@company.com",
     role: "hr",
-    avatar: "LA",
+    avatar: "PS",
   },
   manager: {
-    id: "emp-006",
-    name: "John Smith",
-    email: "john.smith@company.com",
+    id: "emp-3",
+    name: "Rahul Verma",
+    email: "rahul@company.com",
     role: "manager",
-    avatar: "JS",
+    avatar: "RV",
   },
   employee: {
-    id: "emp-001",
-    name: "Sarah Johnson",
-    email: "sarah.johnson@company.com",
+    id: "emp-4",
+    name: "Sneha Patel",
+    email: "sneha@company.com",
     role: "employee",
-    avatar: "SJ",
+    avatar: "SP",
   },
 }
 
