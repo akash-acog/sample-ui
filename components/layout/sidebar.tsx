@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   Sparkles,
   User,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -40,16 +41,23 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       roles: ["admin", "hr", "manager", "employee"],
     },
     {
-      name: "Employees",
-      href: "/employees",
-      icon: Users,
-      roles: ["admin", "hr", "manager"],
+      name: user.role === "employee" ? "My Work Logs" : "Work Logs",
+      href: "/work-logs",
+      icon: Clock,
+      roles: ["admin", "hr", "manager", "employee"],
+      badge: "New",
     },
     {
-      name: "Projects",
+      name: user.role === "employee" ? "My Profile" : "Employees",
+      href: "/employees",
+      icon: Users,
+      roles: ["admin", "hr", "manager", "employee"],
+    },
+    {
+      name: user.role === "employee" ? "My Projects" : "Projects",
       href: "/projects",
       icon: FolderKanban,
-      roles: ["admin", "hr", "manager"],
+      roles: ["admin", "hr", "manager", "employee"],
     },
     {
       name: "Allocations",
@@ -188,7 +196,14 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 className={cn("h-5 w-5 shrink-0", isActive && "text-primary")}
               />
               {!collapsed && (
-                <span className="flex-1 truncate">{item.name}</span>
+                <>
+                  <span className="flex-1 truncate">{item.name}</span>
+                  {item.badge && (
+                    <Badge variant="default" className="text-xs h-5 px-1.5">
+                      {item.badge}
+                    </Badge>
+                  )}
+                </>
               )}
             </Link>
           );
