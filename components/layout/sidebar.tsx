@@ -8,14 +8,12 @@ import {
   Users,
   FolderKanban,
   PieChart,
-  ClipboardCheck,
-  Star,
-  BarChart3,
   Settings,
   ChevronLeft,
   Sparkles,
   User,
   Clock,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -45,7 +43,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       href: "/work-logs",
       icon: Clock,
       roles: ["admin", "hr", "manager", "employee"],
-      badge: "New",
     },
     {
       name: user.role === "employee" ? "My Profile" : "Employees",
@@ -66,28 +63,16 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       roles: ["admin", "hr", "manager"],
     },
     {
-      name: "Checklist",
-      href: "/checklist",
-      icon: ClipboardCheck,
-      roles: ["admin", "hr", "manager", "employee"],
-    },
-    {
-      name: "Performance",
-      href: "/ratings",
-      icon: Star,
-      roles: ["admin", "hr", "manager"],
-    },
-    {
       name: "Skill Matching",
       href: "/skill-matching",
       icon: Sparkles,
       roles: ["admin", "hr", "manager"],
     },
     {
-      name: "Reports",
-      href: "/reporting",
+      name: "Analytics",
+      href: "/analytics",
       icon: BarChart3,
-      roles: ["admin", "hr", "manager"],
+      roles: ["admin", "hr", "manager", "employee"],
     },
   ];
 
@@ -198,11 +183,6 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
               {!collapsed && (
                 <>
                   <span className="flex-1 truncate">{item.name}</span>
-                  {item.badge && (
-                    <Badge variant="default" className="text-xs h-5 px-1.5">
-                      {item.badge}
-                    </Badge>
-                  )}
                 </>
               )}
             </Link>
