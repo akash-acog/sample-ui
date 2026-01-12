@@ -1,7 +1,7 @@
 "use client";
 
 import { useRole } from "@/lib/role-context";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -12,7 +12,26 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   FolderKanban,
   Users,
@@ -25,6 +44,7 @@ import { employees } from "@/lib/data/employees";
 
 export default function ProjectsPage() {
   const { user } = useRole();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   if (!user) return null;
 
@@ -83,6 +103,11 @@ export default function ProjectsPage() {
     };
   }, [filteredProjects]);
 
+  const handleAddProject = () => {
+    // Add project logic
+    setIsAddDialogOpen(false);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Role indicator */}
@@ -103,10 +128,140 @@ export default function ProjectsPage() {
           <p className="text-muted-foreground">{getPageDescription()}</p>
         </div>
         {(user.role === "admin" || user.role === "manager") && (
-          <Button className="gap-2 shadow-sm">
-            <Plus className="h-4 w-4" />
-            New Project
-          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 shadow-sm">
+                <Plus className="h-4 w-4" />
+                New Project
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Create New Project</DialogTitle>
+                <DialogDescription>
+                  Add a new project to the organization
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="projectName">Project Name *</Label>
+                    <Input
+                      id="projectName"
+                      placeholder="e.g., Mobile App Redesign"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="projectCode">Project Code *</Label>
+                    <Input id="projectCode" placeholder="e.g., PROJ-001" />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Brief description of the project"
+                    className="min-h-[100px]"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="type">Project Type *</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="web">Web Application</SelectItem>
+                        <SelectItem value="mobile">Mobile App</SelectItem>
+                        <SelectItem value="internal">Internal Tool</SelectItem>
+                        <SelectItem value="client">Client Project</SelectItem>
+                        <SelectItem value="research">Research & Development</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="priority">Priority *</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select priority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="critical">Critical</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="low">Low</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="manager">Project Manager *</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select manager" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees
+                          .filter((emp) =>
+                            ["admin", "manager"].includes(
+                              emp.designation.toLowerCase()
+                            ) ||
+                            emp.role.toLowerCase().includes("manager")
+                          )
+                          .map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id}>
+                              {emp.name} - {emp.designation}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="status">Status *</Label>
+                    <Select defaultValue="planned">
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="planned">Planned</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="on-hold">On Hold</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="startDate">Start Date *</Label>
+                    <Input id="startDate" type="date" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="endDate">Target End Date</Label>
+                    <Input id="endDate" type="date" />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="budget">Budget (Optional)</Label>
+                  <Input
+                    id="budget"
+                    type="number"
+                    placeholder="Enter budget in USD"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsAddDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleAddProject}>Create Project</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
       </div>
 

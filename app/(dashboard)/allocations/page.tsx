@@ -10,7 +10,24 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -28,68 +45,71 @@ import {
   TrendingUp,
   Users,
   Calendar,
+  AlertTriangle,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { employees } from "@/lib/data/employees";
+import { projects } from "@/lib/data/projects";
 
 export default function AllocationsPage() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [selectedProject, setSelectedProject] = useState("");
+  const [allocationPercent, setAllocationPercent] = useState("");
 
   // Mock data
   const allocations = [
     {
       id: 1,
-      employee: "Sarah Johnson",
-      role: "Senior Developer",
+      employeeId: "emp-1",
+      employee: "Akash Kumar",
+      role: "Senior Software Engineer",
       project: "Project Alpha",
-      allocation: 100,
+      allocation: 75,
       startDate: "2024-01-15",
       endDate: "2024-06-30",
       billable: true,
     },
     {
       id: 2,
-      employee: "Mike Chen",
-      role: "Product Manager",
+      employeeId: "emp-2",
+      employee: "Priya Sharma",
+      role: "Senior Designer",
       project: "Beta Launch",
-      allocation: 75,
+      allocation: 60,
       startDate: "2024-02-01",
       endDate: "2024-08-15",
       billable: true,
     },
     {
       id: 3,
-      employee: "Emily Davis",
-      role: "UX Designer",
+      employeeId: "emp-3",
+      employee: "Rahul Verma",
+      role: "Software Engineer",
       project: "Website Redesign",
-      allocation: 50,
+      allocation: 90,
       startDate: "2024-03-10",
       endDate: "2024-09-30",
       billable: false,
     },
     {
       id: 4,
-      employee: "James Wilson",
-      role: "DevOps Engineer",
+      employeeId: "emp-5",
+      employee: "Amit Singh",
+      role: "Senior DevOps Engineer",
       project: "Mobile App v2",
-      allocation: 100,
+      allocation: 75,
       startDate: "2023-11-01",
       endDate: "2024-04-30",
       billable: true,
     },
     {
       id: 5,
-      employee: "Lisa Anderson",
-      role: "HR Manager",
-      project: "Internal - HR",
-      allocation: 100,
-      startDate: "2024-01-01",
-      endDate: "2024-12-31",
-      billable: false,
-    },
-    {
-      id: 6,
-      employee: "Sarah Johnson",
-      role: "Senior Developer",
+      employeeId: "emp-1",
+      employee: "Akash Kumar",
+      role: "Senior Software Engineer",
       project: "Data Migration",
       allocation: 25,
       startDate: "2024-02-15",
@@ -111,6 +131,55 @@ export default function AllocationsPage() {
   );
   const billableCount = allocations.filter((a) => a.billable).length;
 
+  // Calculate employee utilization
+  const getEmployeeUtilization = (employeeName: string) => {
+    return allocations
+      .filter((a) => a.employee === employeeName)
+      .reduce((sum, a) => sum + a.allocation, 0);
+  };
+
+  // Get available allocation for selected employee
+  const getAvailableAllocation = (employeeId: string) => {
+    const currentAllocations = allocations
+      .filter((a) => a.employeeId === employeeId)
+      .reduce((sum, a) => sum + a.allocation, 0);
+    return 100 - currentAllocations;
+  };
+
+  const handleAddAllocation = () => {
+    // Validation
+    const available = selectedEmployee ? getAvailableAllocation(selectedEmployee) : 100;
+    const percent = parseInt(allocationPercent);
+    
+    if (percent > available) {
+      alert(`Cannot allocate more than ${available}%. Employee would be over-allocated.`);
+      return;
+    }
+    
+    // Add allocation logic here
+    setIsAddDialogOpen(false);
+    setSelectedEmployee("");
+    setSelectedProject("");
+    setAllocationPercent("");
+  };
+
+  const handleExport = () => {
+    const headers = ["Employee", "Project", "Allocation", "Start Date", "End Date", "Billable"];
+    const csv = [
+      headers.join(","),
+      ...filteredAllocations.map((a) =>
+        [a.employee, a.project, `${a.allocation}%`, a.startDate, a.endDate, a.billable ? "Yes" : "No"].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `allocations-${new Date().toISOString().split("T")[0]}.csv`;
+    link.click();
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -124,14 +193,134 @@ export default function AllocationsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleExport}>
             <Download className="h-4 w-4" />
-            Export
+            Export CSV
           </Button>
-          <Button className="gap-2 shadow-sm">
-            <Plus className="h-4 w-4" />
-            New Allocation
-          </Button>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 shadow-sm">
+                <Plus className="h-4 w-4" />
+                New Allocation
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Create New Allocation</DialogTitle>
+                <DialogDescription>
+                  Assign an employee to a project with a specific allocation percentage. Maximum 100% total per employee.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="employee">Employee *</Label>
+                  <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select employee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.map((emp) => {
+                        const available = getAvailableAllocation(emp.id);
+                        return (
+                          <SelectItem key={emp.id} value={emp.id}>
+                            {emp.name} - {emp.designation} ({available}% available)
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                  {selectedEmployee && (
+                    <Alert className="mt-2">
+                      <AlertDescription className="text-sm">
+                        Available allocation: <strong>{getAvailableAllocation(selectedEmployee)}%</strong>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="project">Project *</Label>
+                  <Select value={selectedProject} onValueChange={setSelectedProject}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select project" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.filter(p => p.status !== "Completed").map((proj) => (
+                        <SelectItem key={proj.id} value={proj.id}>
+                          {proj.name} ({proj.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="allocation">Allocation Percentage (%) *</Label>
+                  <Input
+                    id="allocation"
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={allocationPercent}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      if (value <= 100) {
+                        setAllocationPercent(e.target.value);
+                      }
+                    }}
+                    placeholder="Enter percentage (1-100)"
+                  />
+                  {selectedEmployee && allocationPercent && parseInt(allocationPercent) > getAvailableAllocation(selectedEmployee) && (
+                    <Alert variant="destructive" className="mt-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription className="text-sm">
+                        This allocation exceeds available capacity. Max: {getAvailableAllocation(selectedEmployee)}%
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="startDate">Start Date *</Label>
+                    <Input id="startDate" type="date" />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="endDate">End Date</Label>
+                    <Input id="endDate" type="date" />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="billable">Billable</Label>
+                  <Select defaultValue="yes">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Yes - Billable</SelectItem>
+                      <SelectItem value="no">No - Internal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsAddDialogOpen(false);
+                    setSelectedEmployee("");
+                    setSelectedProject("");
+                    setAllocationPercent("");
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAddAllocation}
+                  disabled={!selectedEmployee || !selectedProject || !allocationPercent}
+                >
+                  Create Allocation
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -209,10 +398,7 @@ export default function AllocationsPage() {
             const employeeAllocations = allocations.filter(
               (a) => a.employee === employeeName
             );
-            const totalAllocation = employeeAllocations.reduce(
-              (sum, a) => sum + a.allocation,
-              0
-            );
+            const totalAllocation = getEmployeeUtilization(employeeName);
             const isOverAllocated = totalAllocation > 100;
             const isUnderAllocated = totalAllocation < 80;
 
@@ -262,6 +448,12 @@ export default function AllocationsPage() {
                       value={Math.min(totalAllocation, 100)}
                       className="h-2"
                     />
+                    {isOverAllocated && (
+                      <p className="text-xs text-destructive flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3" />
+                        Over-allocated by {totalAllocation - 100}%
+                      </p>
+                    )}
                   </div>
 
                   {/* Project Breakdown */}
