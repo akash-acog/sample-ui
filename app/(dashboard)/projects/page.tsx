@@ -2,83 +2,127 @@
 
 import { useRole } from "@/lib/role-context";
 import { useState, useMemo } from "react";
-import { projects } from "@/lib/data/projects";
-import { filterProjectsByRole, hasPermission, getPageTitle } from "@/lib/utils/role-filter";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Plus, Search, Filter, FolderKanban, Clock, TrendingUp, DollarSign, Shield, CalendarDays, Users } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Plus,
+  Search,
+  Filter,
+  FolderKanban,
+  Users,
+  Calendar,
+  Shield,
+} from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { projects } from "@/lib/data/projects";
+import { employees } from "@/lib/data/employees";
 
 export default function ProjectsPage() {
   const { user } = useRole();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   if (!user) return null;
 
-  const filteredByRole = useMemo(
-    () => filterProjectsByRole(projects, user, user.id),
-    [user]
+  // Filter projects based on role
+  const filteredProjects = useMemo(() => {
+    let result = projects;
+
+    switch (user.role) {
+      case "admin":
+      case "hr":
+        // Admin and HR see all projects
+        result = projects;
+        break;
+
+      case "manager":
+        // Managers see projects they manage
+        result = projects.filter((proj) => proj.manager === user.name);
+        break;
+
+      case "employee":
+        // Employees see projects they're assigned to
+        const employee = employees.find((emp) => emp.email === user.email);
+        result = projects.filter((proj) =>
+          proj.team.includes(employee?.id || "")
+        );
+        break;
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+      result = result.filter(
+        (proj) =>
+          proj.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          proj.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    return result;
+  }, [user, searchTerm]);
+
+  const canCreateProject = user.role === "admin" || user.role === "manager";
+  const activeProjects = filteredProjects.filter((p) => p.status === "Active");
+  const completedProjects = filteredProjects.filter(
+    (p) => p.status === "Completed"
   );
 
-  const filteredProjects = filteredByRole.filter(
-    (project) =>
-      (project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.client?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (statusFilter === "all" || project.status === statusFilter)
-  );
-
-  const canCreateProject = hasPermission(user, "project:create");
-  const pageTitle = getPageTitle("projects", user.role);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Completed": return "success";
-      case "In Progress": return "default";
-      case "On Hold": return "warning";
-      case "Planning": return "secondary";
-      case "Cancelled": return "destructive";
-      default: return "secondary";
+  const getPageTitle = () => {
+    switch (user.role) {
+      case "employee":
+        return "My Projects";
+      case "manager":
+        return "Managed Projects";
+      default:
+        return "All Projects";
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "Critical": return "destructive";
-      case "High": return "warning";
-      case "Medium": return "default";
-      case "Low": return "secondary";
-      default: return "secondary";
+  const getPageDescription = () => {
+    switch (user.role) {
+      case "employee":
+        return "Projects you are currently working on";
+      case "manager":
+        return "Projects under your management";
+      default:
+        return "All projects across the organization";
     }
   };
-
-  const activeProjects = filteredByRole.filter(p => p.status === "In Progress").length;
-  const completedProjects = filteredByRole.filter(p => p.status === "Completed").length;
-  const totalBudget = filteredByRole.reduce((sum, p) => sum + (p.budget || 0), 0);
-  const totalSpent = filteredByRole.reduce((sum, p) => sum + (p.spent || 0), 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Role indicator */}
       <Alert className="border-primary/20 bg-primary/5">
         <Shield className="h-4 w-4" />
         <AlertDescription>
-          Viewing as <strong className="capitalize">{user.role}</strong> •{" "}
-          <strong>{filteredByRole.length}</strong> project{filteredByRole.length !== 1 ? "s" : ""} accessible
+          Viewing as <strong className="capitalize">{user.role}</strong>. You
+          can see <strong>{filteredProjects.length}</strong> project
+          {filteredProjects.length !== 1 ? "s" : ""}.
         </AlertDescription>
       </Alert>
 
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">{pageTitle}</h1>
-          <p className="text-muted-foreground">
-            {user.role === "employee"
-              ? "Track your project assignments and progress"
-              : "Manage and monitor project portfolio"}
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {getPageTitle()}
+          </h1>
+          <p className="text-muted-foreground">{getPageDescription()}</p>
         </div>
         {canCreateProject && (
           <Button className="gap-2 shadow-sm">
@@ -88,142 +132,197 @@ export default function ProjectsPage() {
         )}
       </div>
 
-      {user.role !== "employee" && (
-        <div className="grid gap-6 md:grid-cols-4">
-          <Card className="border-border/50 shadow-soft hover:shadow-medium transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Total Projects</p>
-                  <p className="text-3xl font-bold">{filteredByRole.length}</p>
-                  <p className="text-xs text-muted-foreground">In portfolio</p>
-                </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-sm">
-                  <FolderKanban className="h-6 w-6 text-white" />
-                </div>
+      {/* Stats */}
+      <div className="grid gap-6 md:grid-cols-4">
+        <Card className="border-border/50 shadow-soft">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Projects
+                </p>
+                <p className="text-3xl font-bold">{filteredProjects.length}</p>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-sm">
+                <FolderKanban className="h-6 w-6 text-white" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="border-border/50 shadow-soft hover:shadow-medium transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Active</p>
-                  <p className="text-3xl font-bold">{activeProjects}</p>
-                  <p className="text-xs text-muted-foreground">In progress</p>
-                </div>
-                <Badge variant="default" className="text-sm px-3 py-1">
-                  <Clock className="h-3 w-3 mr-1" />
+        <Card className="border-border/50 shadow-soft">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
                   Active
-                </Badge>
+                </p>
+                <p className="text-3xl font-bold">{activeProjects.length}</p>
               </div>
-            </CardContent>
-          </Card>
+              <Badge variant="success" className="text-xs">
+                In Progress
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="border-border/50 shadow-soft hover:shadow-medium transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                  <p className="text-3xl font-bold">{completedProjects}</p>
-                  <p className="text-xs text-muted-foreground">Successfully delivered</p>
-                </div>
-                <Badge variant="success" className="text-sm px-3 py-1">
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  Done
-                </Badge>
+        <Card className="border-border/50 shadow-soft">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Completed
+                </p>
+                <p className="text-3xl font-bold">{completedProjects.length}</p>
               </div>
-            </CardContent>
-          </Card>
+              <Badge variant="secondary" className="text-xs">
+                Done
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className="border-border/50 shadow-soft hover:shadow-medium transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Budget Spent</p>
-                  <p className="text-3xl font-bold">{((totalSpent / totalBudget) * 100).toFixed(0)}%</p>
-                  <p className="text-xs text-muted-foreground">${(totalSpent / 1000).toFixed(0)}K of ${(totalBudget / 1000).toFixed(0)}K</p>
-                </div>
-                <DollarSign className="h-12 w-12 text-green-500" />
+        <Card className="border-border/50 shadow-soft">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Avg Progress
+                </p>
+                <p className="text-3xl font-bold">
+                  {
+                    (
+                      filteredProjects.reduce((sum, p) => sum + p.progress, 0) /
+                      filteredProjects.length
+                    ).toFixed(0)
+                  }%
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              <Badge variant="default" className="text-xs">
+                Overall
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
+      {/* Projects Table */}
       <Card className="border-border/50 shadow-soft">
         <CardHeader>
-          <CardTitle>Project Portfolio</CardTitle>
-          <CardDescription>
-            Showing {filteredProjects.length} of {filteredByRole.length} project{filteredByRole.length !== 1 ? "s" : ""}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Project List</CardTitle>
+              <CardDescription>
+                Showing {filteredProjects.length} project
+                {filteredProjects.length !== 1 ? "s" : ""}
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2 mb-6">
+          {/* Search and Filter */}
+          <div className="flex items-center gap-2 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search projects by name, description, or client..."
+                placeholder="Search projects..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" className="gap-2" onClick={() => setStatusFilter("all")}>
+            <Button variant="outline" className="gap-2">
               <Filter className="h-4 w-4" />
-              All
+              Filter
             </Button>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {filteredProjects.length === 0 ? (
-              <div className="col-span-2 text-center py-12 text-muted-foreground">
-                <FolderKanban className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p>No projects found</p>
-              </div>
-            ) : (
-              filteredProjects.map((project) => (
-                <Card key={project.id} className="border-border/50 hover:shadow-md transition-all cursor-pointer">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1 flex-1">
-                        <CardTitle className="text-lg">{project.name}</CardTitle>
-                        <CardDescription className="line-clamp-2">{project.description}</CardDescription>
-                      </div>
-                      <Badge variant={getPriorityColor(project.priority)}>{project.priority}</Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-semibold">{project.progress}%</span>
-                    </div>
-                    <Progress value={project.progress} className="h-2" />
-                    
-                    <div className="flex items-center justify-between text-sm pt-2 border-t">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={getStatusColor(project.status)} className="text-xs">{project.status}</Badge>
-                        <span className="text-muted-foreground flex items-center gap-1">
-                          <CalendarDays className="h-3 w-3" />
-                          {new Date(project.endDate).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <span className="text-muted-foreground flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {project.team.length}
-                      </span>
-                    </div>
-
-                    {project.client && (
-                      <p className="text-xs text-muted-foreground">
-                        Client: <span className="font-medium text-foreground">{project.client}</span>
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
-            )}
+          {/* Table */}
+          <div className="rounded-lg border border-border/50 overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Project Name</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Progress</TableHead>
+                  <TableHead>Team Size</TableHead>
+                  {user.role !== "employee" && <TableHead>Manager</TableHead>}
+                  <TableHead>Start Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProjects.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={user.role === "employee" ? 5 : 6}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      No projects found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredProjects.map((project) => (
+                    <TableRow key={project.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{project.name}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-1">
+                            {project.description}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            project.status === "Active"
+                              ? "success"
+                              : project.status === "Completed"
+                              ? "secondary"
+                              : "warning"
+                          }
+                        >
+                          {project.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden max-w-[100px]">
+                            <div
+                              className="h-full bg-primary transition-all"
+                              style={{ width: `${project.progress}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium">
+                            {project.progress}%
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span>{project.team.length}</span>
+                        </div>
+                      </TableCell>
+                      {user.role !== "employee" && (
+                        <TableCell>{project.manager}</TableCell>
+                      )}
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          {new Date(project.startDate).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              year: "numeric",
+                            }
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
