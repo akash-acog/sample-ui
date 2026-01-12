@@ -2,6 +2,7 @@
 
 import { useRole } from "@/lib/role-context";
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -12,6 +13,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -20,6 +29,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,13 +58,22 @@ import {
   Users,
   Shield,
   UserCog,
+  X,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { employees } from "@/lib/data/employees";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function EmployeesPage() {
   const { user } = useRole();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<
+    (typeof employees)[0] | null
+  >(null);
+  const [filterDepartment, setFilterDepartment] = useState<string>("all");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   if (!user) return null;
 
@@ -74,6 +101,11 @@ export default function EmployeesPage() {
         break;
     }
 
+    // Apply department filter
+    if (filterDepartment !== "all") {
+      result = result.filter((emp) => emp.department === filterDepartment);
+    }
+
     // Apply search filter
     if (searchTerm) {
       result = result.filter(
@@ -85,7 +117,12 @@ export default function EmployeesPage() {
     }
 
     return result;
-  }, [user, searchTerm]);
+  }, [user, searchTerm, filterDepartment]);
+
+  // Get unique departments
+  const departments = Array.from(
+    new Set(employees.map((emp) => emp.department))
+  );
 
   // Check permissions
   const canAddEmployee = user.role === "admin" || user.role === "hr";
@@ -117,6 +154,30 @@ export default function EmployeesPage() {
     }
   };
 
+  const handleExport = () => {
+    // Export to CSV
+    const headers = ["Name", "Email", "Department", "Designation", "Status"];
+    const csv = [
+      headers.join(","),
+      ...filteredEmployees.map((emp) =>
+        [
+          emp.name,
+          emp.email,
+          emp.department,
+          emp.designation,
+          emp.status,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `employees-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Role indicator */}
@@ -143,16 +204,93 @@ export default function EmployeesPage() {
         </div>
         <div className="flex items-center gap-2">
           {canExport && (
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" onClick={handleExport}>
               <Download className="h-4 w-4" />
-              Export
+              Export CSV
             </Button>
           )}
           {canAddEmployee && (
-            <Button className="gap-2 shadow-sm">
-              <Plus className="h-4 w-4" />
-              Add Employee
-            </Button>
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 shadow-sm">
+                  <Plus className="h-4 w-4" />
+                  Add Employee
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add New Employee</DialogTitle>
+                  <DialogDescription>
+                    Enter employee details to create a new record
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="name">Full Name *</Label>
+                      <Input id="name" placeholder="John Doe" />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="email">Email *</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="john@example.com"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="department">Department *</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {departments.map((dept) => (
+                            <SelectItem key={dept} value={dept}>
+                              {dept}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="designation">Designation *</Label>
+                      <Input id="designation" placeholder="Software Engineer" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input id="phone" placeholder="+1 234 567 8900" />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="joinDate">Date of Joining *</Label>
+                      <Input id="joinDate" type="date" />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Textarea
+                      id="location"
+                      placeholder="123 Main St, City, Country"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddDialogOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button onClick={() => setIsAddDialogOpen(false)}>
+                    Add Employee
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
       </div>
@@ -180,9 +318,7 @@ export default function EmployeesPage() {
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Active
-                  </p>
+                  <p className="text-sm font-medium text-muted-foreground">Active</p>
                   <p className="text-3xl font-bold">
                     {filteredEmployees.filter((e) => e.status === "Active").length}
                   </p>
@@ -202,7 +338,10 @@ export default function EmployeesPage() {
                     On Leave
                   </p>
                   <p className="text-3xl font-bold">
-                    {filteredEmployees.filter((e) => e.status === "On Leave").length}
+                    {
+                      filteredEmployees.filter((e) => e.status === "On Leave")
+                        .length
+                    }
                   </p>
                 </div>
                 <Badge variant="warning" className="text-xs">
@@ -247,7 +386,9 @@ export default function EmployeesPage() {
               <CardDescription>
                 {user.role === "employee"
                   ? "Your personal information and details"
-                  : `Showing ${filteredEmployees.length} employee${filteredEmployees.length !== 1 ? "s" : ""}`}
+                  : `Showing ${filteredEmployees.length} employee${
+                      filteredEmployees.length !== 1 ? "s" : ""
+                    }`}
               </CardDescription>
             </div>
           </div>
@@ -265,10 +406,62 @@ export default function EmployeesPage() {
                   className="pl-10"
                 />
               </div>
-              <Button variant="outline" className="gap-2">
-                <Filter className="h-4 w-4" />
-                Filter
-              </Button>
+              <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filter
+                    {filterDepartment !== "all" && (
+                      <Badge variant="secondary" className="ml-1">
+                        1
+                      </Badge>
+                    )}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Filter Employees</DialogTitle>
+                    <DialogDescription>
+                      Filter employees by department or other criteria
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label>Department</Label>
+                      <Select
+                        value={filterDepartment}
+                        onValueChange={setFilterDepartment}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Departments</SelectItem>
+                          {departments.map((dept) => (
+                            <SelectItem key={dept} value={dept}>
+                              {dept}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setFilterDepartment("all");
+                        setIsFilterOpen(false);
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                    <Button onClick={() => setIsFilterOpen(false)}>
+                      Apply
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           )}
 
@@ -281,17 +474,16 @@ export default function EmployeesPage() {
                   <TableHead>Role</TableHead>
                   <TableHead>Department</TableHead>
                   {user.role !== "employee" && <TableHead>Status</TableHead>}
+                  {user.role !== "employee" && <TableHead>Utilization</TableHead>}
                   <TableHead>Join Date</TableHead>
-                  {canEditEmployee && (
-                    <TableHead className="text-right">Actions</TableHead>
-                  )}
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredEmployees.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={canEditEmployee ? 6 : 5}
+                      colSpan={user.role === "employee" ? 4 : 6}
                       className="text-center py-8 text-muted-foreground"
                     >
                       No employees found
@@ -301,17 +493,19 @@ export default function EmployeesPage() {
                   filteredEmployees.map((employee) => (
                     <TableRow key={employee.id}>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary text-white font-medium shadow-sm">
-                            {employee.name.charAt(0)}
+                        <Link href={`/employees/${employee.id}`}>
+                          <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary text-white font-medium shadow-sm">
+                              {employee.name.charAt(0)}
+                            </div>
+                            <div>
+                              <p className="font-medium">{employee.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {employee.email}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">{employee.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {employee.email}
-                            </p>
-                          </div>
-                        </div>
+                        </Link>
                       </TableCell>
                       <TableCell>{employee.role}</TableCell>
                       <TableCell>
@@ -328,53 +522,69 @@ export default function EmployeesPage() {
                           </Badge>
                         </TableCell>
                       )}
+                      {user.role !== "employee" && (
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20">
+                              <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-primary"
+                                  style={{ width: `${employee.utilization}%` }}
+                                />
+                              </div>
+                            </div>
+                            <span className="text-sm font-medium">
+                              {employee.utilization}%
+                            </span>
+                          </div>
+                        </TableCell>
+                      )}
                       <TableCell>
                         {new Date(employee.joinDate).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "short",
                         })}
                       </TableCell>
-                      {canEditEmployee && (
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                              <Link href={`/employees/${employee.id}`}>
                                 <Eye className="mr-2 h-4 w-4" />
-                                View Details
+                                View Profile
+                              </Link>
+                            </DropdownMenuItem>
+                            {canEditEmployee && (
+                              <DropdownMenuItem>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
                               </DropdownMenuItem>
-                              {(user.role === "admin" ||
-                                user.role === "hr" ||
-                                (user.role === "manager" &&
-                                  employee.manager === user.name)) && (
-                                <DropdownMenuItem>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  Edit
+                            )}
+                            {canDeleteEmployee && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => {
+                                    setSelectedEmployee(employee);
+                                    setIsDeleteDialogOpen(true);
+                                  }}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
                                 </DropdownMenuItem>
-                              )}
-                              {canDeleteEmployee && (
-                                <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem className="text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      )}
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -383,6 +593,36 @@ export default function EmployeesPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Employee</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedEmployee?.name}? This action
+              cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setIsDeleteDialogOpen(false);
+                setSelectedEmployee(null);
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

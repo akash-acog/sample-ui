@@ -1,181 +1,155 @@
-import type { Employee } from "./types";
+export interface Skill {
+  name: string;
+  proficiency: "Beginner" | "Intermediate" | "Advanced" | "Expert";
+}
+
+export interface Employee {
+  id: string;
+  code: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  designation: string;
+  department: string;
+  manager: string;
+  joinDate: string;
+  location: string;
+  status: "Active" | "On Leave" | "Inactive";
+  type: "Full Time" | "Intern" | "Contract";
+  utilization: number;
+  skills: Skill[];
+  emergencyContact?: string;
+  githubUrl?: string;
+  bio?: string;
+}
 
 export const employees: Employee[] = [
   {
-    id: "emp-001",
-    name: "Sarah Johnson",
-    email: "sarah.johnson@company.com",
-    role: "Senior Developer",
+    id: "emp-1",
+    code: "EMP001",
+    name: "Akash Kumar",
+    email: "akash@company.com",
+    phone: "+91 98765 43210",
+    role: "Full Stack Developer",
+    designation: "Senior Software Engineer",
     department: "Engineering",
-    team: "Engineering Team A",
-    status: "Active",
-    joinDate: "2023-01-15",
-    manager: "John Smith",
-    phone: "+1 234-567-8901",
-    location: "New York",
-  },
-  {
-    id: "emp-002",
-    name: "Mike Chen",
-    email: "mike.chen@company.com",
-    role: "Product Manager",
-    department: "Product",
-    team: "Product Team",
-    status: "Active",
-    joinDate: "2022-06-20",
-    manager: "Jane Doe",
-    phone: "+1 234-567-8902",
-    location: "San Francisco",
-  },
-  {
-    id: "emp-003",
-    name: "Emily Davis",
-    email: "emily.davis@company.com",
-    role: "UX Designer",
-    department: "Design",
-    team: "Design Team",
-    status: "Active",
-    joinDate: "2023-03-10",
-    manager: "Jane Doe",
-    phone: "+1 234-567-8903",
-    location: "Los Angeles",
-  },
-  {
-    id: "emp-004",
-    name: "James Wilson",
-    email: "james.wilson@company.com",
-    role: "DevOps Engineer",
-    department: "Engineering",
-    team: "Engineering Team B",
-    status: "On Leave",
-    joinDate: "2021-11-05",
-    manager: "John Smith",
-    phone: "+1 234-567-8904",
-    location: "Seattle",
-  },
-  {
-    id: "emp-005",
-    name: "Lisa Anderson",
-    email: "lisa.anderson@company.com",
-    role: "HR Manager",
-    department: "Human Resources",
-    team: "HR Team",
-    status: "Active",
-    joinDate: "2020-08-12",
-    manager: "CEO",
-    phone: "+1 234-567-8905",
-    location: "Chicago",
-  },
-  {
-    id: "emp-006",
-    name: "John Smith",
-    email: "john.smith@company.com",
-    role: "Engineering Manager",
-    department: "Engineering",
-    team: "Engineering Team A",
-    status: "Active",
-    joinDate: "2019-05-20",
-    manager: "CTO",
-    phone: "+1 234-567-8906",
-    location: "Boston",
-  },
-  {
-    id: "emp-007",
-    name: "Alex Rodriguez",
-    email: "alex.rodriguez@company.com",
-    role: "QA Engineer",
-    department: "Engineering",
-    team: "Engineering Team A",
-    status: "Active",
-    joinDate: "2023-07-01",
-    manager: "John Smith",
-    phone: "+1 234-567-8907",
-    location: "Austin",
-  },
-  {
-    id: "emp-008",
-    name: "Maria Garcia",
-    email: "maria.garcia@company.com",
-    role: "Marketing Manager",
-    department: "Marketing",
-    team: "Marketing Team",
-    status: "Active",
+    manager: "Sarah Manager",
     joinDate: "2022-03-15",
-    manager: "CMO",
-    phone: "+1 234-567-8908",
-    location: "Miami",
+    location: "Hyderabad, Telangana, India",
+    status: "Active",
+    type: "Full Time",
+    utilization: 85,
+    emergencyContact: "+91 98765 00000",
+    githubUrl: "https://github.com/akash",
+    bio: "Passionate full-stack developer with expertise in React, Node.js, and cloud technologies. Love building scalable applications.",
+    skills: [
+      { name: "React", proficiency: "Expert" },
+      { name: "Node.js", proficiency: "Advanced" },
+      { name: "TypeScript", proficiency: "Expert" },
+      { name: "Python", proficiency: "Intermediate" },
+      { name: "Docker", proficiency: "Advanced" },
+      { name: "AWS", proficiency: "Intermediate" },
+    ],
   },
   {
-    id: "emp-009",
-    name: "David Kim",
-    email: "david.kim@company.com",
+    id: "emp-2",
+    code: "EMP002",
+    name: "Priya Sharma",
+    email: "priya@company.com",
+    phone: "+91 98765 43211",
+    role: "UI/UX Designer",
+    designation: "Senior Designer",
+    department: "Design",
+    manager: "Sarah Manager",
+    joinDate: "2021-06-20",
+    location: "Bangalore, Karnataka, India",
+    status: "Active",
+    type: "Full Time",
+    utilization: 60,
+    emergencyContact: "+91 98765 00001",
+    bio: "Creative designer focused on user-centered design and creating delightful experiences.",
+    skills: [
+      { name: "Figma", proficiency: "Expert" },
+      { name: "Adobe XD", proficiency: "Advanced" },
+      { name: "UI Design", proficiency: "Expert" },
+      { name: "Prototyping", proficiency: "Advanced" },
+    ],
+  },
+  {
+    id: "emp-3",
+    code: "EMP003",
+    name: "Rahul Verma",
+    email: "rahul@company.com",
+    phone: "+91 98765 43212",
+    role: "Backend Developer",
+    designation: "Software Engineer",
+    department: "Engineering",
+    manager: "John Lead",
+    joinDate: "2023-01-10",
+    location: "Mumbai, Maharashtra, India",
+    status: "Active",
+    type: "Full Time",
+    utilization: 90,
+    emergencyContact: "+91 98765 00002",
+    githubUrl: "https://github.com/rahul",
+    bio: "Backend specialist with strong database and API design skills.",
+    skills: [
+      { name: "Java", proficiency: "Expert" },
+      { name: "Spring Boot", proficiency: "Advanced" },
+      { name: "PostgreSQL", proficiency: "Advanced" },
+      { name: "MongoDB", proficiency: "Intermediate" },
+      { name: "Redis", proficiency: "Intermediate" },
+    ],
+  },
+  {
+    id: "emp-4",
+    code: "EMP004",
+    name: "Sneha Patel",
+    email: "sneha@company.com",
+    phone: "+91 98765 43213",
     role: "Data Analyst",
+    designation: "Business Analyst",
     department: "Analytics",
-    team: "Analytics Team",
-    status: "Active",
-    joinDate: "2023-02-01",
-    manager: "Jane Doe",
-    phone: "+1 234-567-8909",
-    location: "San Diego",
+    manager: "Sarah Manager",
+    joinDate: "2022-09-05",
+    location: "Pune, Maharashtra, India",
+    status: "On Leave",
+    type: "Full Time",
+    utilization: 0,
+    emergencyContact: "+91 98765 00003",
+    bio: "Data-driven analyst specializing in business intelligence and data visualization.",
+    skills: [
+      { name: "Python", proficiency: "Advanced" },
+      { name: "SQL", proficiency: "Expert" },
+      { name: "Tableau", proficiency: "Advanced" },
+      { name: "Excel", proficiency: "Expert" },
+    ],
   },
   {
-    id: "emp-010",
-    name: "Sophie Turner",
-    email: "sophie.turner@company.com",
-    role: "Sales Executive",
-    department: "Sales",
-    team: "Sales Team",
+    id: "emp-5",
+    code: "EMP005",
+    name: "Amit Singh",
+    email: "amit@company.com",
+    phone: "+91 98765 43214",
+    role: "DevOps Engineer",
+    designation: "Senior DevOps Engineer",
+    department: "Operations",
+    manager: "John Lead",
+    joinDate: "2020-11-12",
+    location: "Delhi, India",
     status: "Active",
-    joinDate: "2022-09-10",
-    manager: "Sales Director",
-    phone: "+1 234-567-8910",
-    location: "Denver",
-  },
-  {
-    id: "emp-011",
-    name: "Demo Admin",
-    email: "admin@company.com",
-    role: "System Administrator",
-    department: "IT",
-    team: "IT Team",
-    status: "Active",
-    joinDate: "2019-01-01",
-    manager: "CEO",
-    phone: "+1 234-567-8911",
-    location: "Remote",
-  },
-  {
-    id: "emp-012",
-    name: "Jane Doe",
-    email: "jane.doe@company.com",
-    role: "Chief Product Officer",
-    department: "Product",
-    team: "Leadership Team",
-    status: "Active",
-    joinDate: "2018-06-15",
-    manager: "CEO",
-    phone: "+1 234-567-8912",
-    location: "San Francisco",
+    type: "Full Time",
+    utilization: 75,
+    emergencyContact: "+91 98765 00004",
+    githubUrl: "https://github.com/amit",
+    bio: "DevOps engineer with expertise in CI/CD, cloud infrastructure, and automation.",
+    skills: [
+      { name: "Kubernetes", proficiency: "Expert" },
+      { name: "Docker", proficiency: "Expert" },
+      { name: "AWS", proficiency: "Advanced" },
+      { name: "Terraform", proficiency: "Advanced" },
+      { name: "Jenkins", proficiency: "Intermediate" },
+    ],
   },
 ];
-
-// Helper functions
-export function getEmployeeById(id: string): Employee | undefined {
-  return employees.find((emp) => emp.id === id);
-}
-
-export function getEmployeeByEmail(email: string): Employee | undefined {
-  return employees.find((emp) => emp.email === email);
-}
-
-export function getEmployeesByManager(managerName: string): Employee[] {
-  return employees.filter((emp) => emp.manager === managerName);
-}
-
-export function getEmployeesByTeam(team: string): Employee[] {
-  return employees.filter((emp) => emp.team === team);
-}
-
-export function getEmployeesByDepartment(department: string): Employee[] {
-  return employees.filter((emp) => emp.department === department);
-}

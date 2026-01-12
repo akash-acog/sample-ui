@@ -1,43 +1,52 @@
-"use client"
+"use client";
 
-import { useRouter } from "next/navigation"
-import { useRole } from "@/lib/role-context"
-import { EmployeeDetailPage } from "@/components/pages/employee-detail-page"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
+import { use } from "react";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { ProfilePage } from "@/components/pages/profile-page";
+import { useRole } from "@/lib/role-context";
+import { employees } from "@/lib/data/employees";
 
-export default function EmployeeDetailPageRoute({ params }: { params: { id: string } }) {
-  const router = useRouter()
-  const { user } = useRole()
+export default function EmployeeProfilePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const { user } = useRole();
 
-  if (!user) return null
+  if (!user) return null;
 
-  const handleBack = () => {
-    router.back()
+  const employee = employees.find((emp) => emp.id === id);
+
+  if (!employee) {
+    notFound();
   }
 
-  const handleViewProject = (projectName: string) => {
-    router.push("/projects")
+  // Check if user can view this employee
+  const canView =
+    user.role === "admin" ||
+    user.role === "hr" ||
+    (user.role === "manager" &&
+      (employee.manager === user.name || employee.email === user.email)) ||
+    (user.role === "employee" && employee.email === user.email);
+
+  if (!canView) {
+    notFound();
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="icon" onClick={handleBack} className="rounded-full">
-          <ArrowLeft className="w-5 h-5" />
+    <div className="space-y-6 animate-fade-in">
+      <Link href="/employees">
+        <Button variant="ghost" className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Employees
         </Button>
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Employee Details</h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">View and manage employee information</p>
-        </div>
-      </div>
+      </Link>
 
-      <EmployeeDetailPage
-        employeeId={params.id}
-        onBack={handleBack}
-        onViewProject={handleViewProject}
-        userRole={user.role}
-      />
+      <ProfilePage userRole={user.role} currentUserId={id} viewMode={true} />
     </div>
-  )
+  );
 }
