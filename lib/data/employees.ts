@@ -1,24 +1,6 @@
-export interface Employee {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  department: string;
-  team: string;
-  status: "Active" | "On Leave" | "Inactive";
-  joinDate: string;
-  performance: number;
-  manager: string;
-  managerId?: string;
-  phone: string;
-  location: string;
-  employeeType: "Full-time" | "Part-time" | "Contract";
-  salary?: number;
-  skills: string[];
-}
+import type { Employee } from "./types";
 
 export const employees: Employee[] = [
-  // Engineering Team
   {
     id: "emp-001",
     name: "Sarah Johnson",
@@ -28,55 +10,12 @@ export const employees: Employee[] = [
     team: "Engineering Team A",
     status: "Active",
     joinDate: "2023-01-15",
-    performance: 4.5,
     manager: "John Smith",
-    managerId: "emp-006",
     phone: "+1 234-567-8901",
-    location: "New York, NY",
-    employeeType: "Full-time",
-    salary: 120000,
-    skills: ["React", "TypeScript", "Node.js"],
+    location: "New York",
   },
   {
     id: "emp-002",
-    name: "James Wilson",
-    email: "james.wilson@company.com",
-    role: "DevOps Engineer",
-    department: "Engineering",
-    team: "Engineering Team A",
-    status: "On Leave",
-    joinDate: "2021-11-05",
-    performance: 4.3,
-    manager: "John Smith",
-    managerId: "emp-006",
-    phone: "+1 234-567-8902",
-    location: "San Francisco, CA",
-    employeeType: "Full-time",
-    salary: 115000,
-    skills: ["Docker", "Kubernetes", "AWS"],
-  },
-  {
-    id: "emp-003",
-    name: "David Chen",
-    email: "david.chen@company.com",
-    role: "Junior Developer",
-    department: "Engineering",
-    team: "Engineering Team A",
-    status: "Active",
-    joinDate: "2024-06-01",
-    performance: 4.0,
-    manager: "John Smith",
-    managerId: "emp-006",
-    phone: "+1 234-567-8903",
-    location: "Austin, TX",
-    employeeType: "Full-time",
-    salary: 85000,
-    skills: ["JavaScript", "Python", "Git"],
-  },
-  
-  // Product Team
-  {
-    id: "emp-004",
     name: "Mike Chen",
     email: "mike.chen@company.com",
     role: "Product Manager",
@@ -84,35 +23,49 @@ export const employees: Employee[] = [
     team: "Product Team",
     status: "Active",
     joinDate: "2022-06-20",
-    performance: 4.2,
     manager: "Jane Doe",
-    managerId: "emp-007",
+    phone: "+1 234-567-8902",
+    location: "San Francisco",
+  },
+  {
+    id: "emp-003",
+    name: "Emily Davis",
+    email: "emily.davis@company.com",
+    role: "UX Designer",
+    department: "Design",
+    team: "Design Team",
+    status: "Active",
+    joinDate: "2023-03-10",
+    manager: "Jane Doe",
+    phone: "+1 234-567-8903",
+    location: "Los Angeles",
+  },
+  {
+    id: "emp-004",
+    name: "James Wilson",
+    email: "james.wilson@company.com",
+    role: "DevOps Engineer",
+    department: "Engineering",
+    team: "Engineering Team B",
+    status: "On Leave",
+    joinDate: "2021-11-05",
+    manager: "John Smith",
     phone: "+1 234-567-8904",
-    location: "Seattle, WA",
-    employeeType: "Full-time",
-    salary: 130000,
-    skills: ["Product Strategy", "Agile", "Analytics"],
+    location: "Seattle",
   },
   {
     id: "emp-005",
-    name: "Rachel Green",
-    email: "rachel.green@company.com",
-    role: "Product Designer",
-    department: "Product",
-    team: "Product Team",
+    name: "Lisa Anderson",
+    email: "lisa.anderson@company.com",
+    role: "HR Manager",
+    department: "Human Resources",
+    team: "HR Team",
     status: "Active",
-    joinDate: "2023-09-10",
-    performance: 4.4,
-    manager: "Jane Doe",
-    managerId: "emp-007",
+    joinDate: "2020-08-12",
+    manager: "CEO",
     phone: "+1 234-567-8905",
-    location: "Los Angeles, CA",
-    employeeType: "Full-time",
-    salary: 105000,
-    skills: ["Figma", "UI/UX", "Design Systems"],
+    location: "Chicago",
   },
-
-  // Management
   {
     id: "emp-006",
     name: "John Smith",
@@ -122,89 +75,107 @@ export const employees: Employee[] = [
     team: "Engineering Team A",
     status: "Active",
     joinDate: "2019-05-20",
-    performance: 4.8,
     manager: "CTO",
-    managerId: "emp-999",
     phone: "+1 234-567-8906",
-    location: "New York, NY",
-    employeeType: "Full-time",
-    salary: 150000,
-    skills: ["Leadership", "Architecture", "Mentoring"],
+    location: "Boston",
   },
   {
     id: "emp-007",
-    name: "Jane Doe",
-    email: "jane.doe@company.com",
-    role: "Product Director",
-    department: "Product",
-    team: "Product Team",
+    name: "Alex Rodriguez",
+    email: "alex.rodriguez@company.com",
+    role: "QA Engineer",
+    department: "Engineering",
+    team: "Engineering Team A",
     status: "Active",
-    joinDate: "2018-03-15",
-    performance: 4.7,
-    manager: "CEO",
-    managerId: "emp-998",
+    joinDate: "2023-07-01",
+    manager: "John Smith",
     phone: "+1 234-567-8907",
-    location: "San Francisco, CA",
-    employeeType: "Full-time",
-    salary: 160000,
-    skills: ["Product Management", "Strategy", "Leadership"],
+    location: "Austin",
   },
-
-  // HR Team
   {
     id: "emp-008",
-    name: "Lisa Anderson",
-    email: "lisa.anderson@company.com",
-    role: "HR Manager",
-    department: "Human Resources",
-    team: "HR Team",
+    name: "Maria Garcia",
+    email: "maria.garcia@company.com",
+    role: "Marketing Manager",
+    department: "Marketing",
+    team: "Marketing Team",
     status: "Active",
-    joinDate: "2020-08-12",
-    performance: 4.6,
-    manager: "CEO",
-    managerId: "emp-998",
+    joinDate: "2022-03-15",
+    manager: "CMO",
     phone: "+1 234-567-8908",
-    location: "New York, NY",
-    employeeType: "Full-time",
-    salary: 95000,
-    skills: ["Recruitment", "Employee Relations", "HR Policy"],
+    location: "Miami",
   },
   {
     id: "emp-009",
-    name: "Tom Harris",
-    email: "tom.harris@company.com",
-    role: "HR Coordinator",
-    department: "Human Resources",
-    team: "HR Team",
+    name: "David Kim",
+    email: "david.kim@company.com",
+    role: "Data Analyst",
+    department: "Analytics",
+    team: "Analytics Team",
     status: "Active",
-    joinDate: "2022-01-20",
-    performance: 4.1,
-    manager: "Lisa Anderson",
-    managerId: "emp-008",
+    joinDate: "2023-02-01",
+    manager: "Jane Doe",
     phone: "+1 234-567-8909",
-    location: "Chicago, IL",
-    employeeType: "Full-time",
-    salary: 65000,
-    skills: ["Onboarding", "HRIS", "Benefits Admin"],
+    location: "San Diego",
   },
-
-  // Design Team
   {
     id: "emp-010",
-    name: "Emily Davis",
-    email: "emily.davis@company.com",
-    role: "UX Designer",
-    department: "Design",
-    team: "Design Team",
+    name: "Sophie Turner",
+    email: "sophie.turner@company.com",
+    role: "Sales Executive",
+    department: "Sales",
+    team: "Sales Team",
     status: "Active",
-    joinDate: "2023-03-10",
-    performance: 4.7,
-    manager: "Jane Doe",
-    managerId: "emp-007",
+    joinDate: "2022-09-10",
+    manager: "Sales Director",
     phone: "+1 234-567-8910",
-    location: "Portland, OR",
-    employeeType: "Full-time",
-    salary: 100000,
-    skills: ["User Research", "Wireframing", "Prototyping"],
+    location: "Denver",
+  },
+  {
+    id: "emp-011",
+    name: "Demo Admin",
+    email: "admin@company.com",
+    role: "System Administrator",
+    department: "IT",
+    team: "IT Team",
+    status: "Active",
+    joinDate: "2019-01-01",
+    manager: "CEO",
+    phone: "+1 234-567-8911",
+    location: "Remote",
+  },
+  {
+    id: "emp-012",
+    name: "Jane Doe",
+    email: "jane.doe@company.com",
+    role: "Chief Product Officer",
+    department: "Product",
+    team: "Leadership Team",
+    status: "Active",
+    joinDate: "2018-06-15",
+    manager: "CEO",
+    phone: "+1 234-567-8912",
+    location: "San Francisco",
   },
 ];
+
+// Helper functions
+export function getEmployeeById(id: string): Employee | undefined {
+  return employees.find((emp) => emp.id === id);
+}
+
+export function getEmployeeByEmail(email: string): Employee | undefined {
+  return employees.find((emp) => emp.email === email);
+}
+
+export function getEmployeesByManager(managerName: string): Employee[] {
+  return employees.filter((emp) => emp.manager === managerName);
+}
+
+export function getEmployeesByTeam(team: string): Employee[] {
+  return employees.filter((emp) => emp.team === team);
+}
+
+export function getEmployeesByDepartment(department: string): Employee[] {
+  return employees.filter((emp) => emp.department === department);
+}
