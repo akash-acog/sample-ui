@@ -65,6 +65,19 @@
 }
 
 @layer utilities {
+  /* Opaque Background Utilities */
+  .bg-card-solid {
+    background-color: hsl(var(--card));
+  }
+  
+  .bg-background-solid {
+    background-color: hsl(var(--background));
+  }
+  
+  .bg-popover-solid {
+    background-color: hsl(var(--popover));
+  }
+
   /* Gradient Utilities */
   .bg-gradient-primary {
     background-image: linear-gradient(to bottom right, hsl(var(--primary)), hsl(var(--primary) / 0.8));
