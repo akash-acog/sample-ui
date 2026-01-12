@@ -45,6 +45,7 @@ import {
   FolderKanban,
   TrendingUp,
   AlertCircle,
+  Pencil,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { workLogs } from "@/lib/data/work-logs";
@@ -57,6 +58,10 @@ export default function WorkLogsPage() {
     new Date().toISOString().split("T")[0]
   );
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingLog, setEditingLog] = useState<typeof workLogs[0] | null>(
+    null
+  );
 
   if (!user) return null;
 
@@ -118,6 +123,20 @@ export default function WorkLogsPage() {
     }
   };
 
+  const handleEditLog = (log: typeof workLogs[0]) => {
+    setEditingLog(log);
+    setIsEditDialogOpen(true);
+  };
+
+  const canEditLog = (log: typeof workLogs[0]) => {
+    if (user.role === "admin") return true;
+    if (user.role === "employee") {
+      const employee = employees.find((emp) => emp.email === user.email);
+      return log.employeeId === employee?.id;
+    }
+    return false;
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Role indicator */}
@@ -126,6 +145,7 @@ export default function WorkLogsPage() {
         <AlertDescription>
           Viewing as <strong className="capitalize">{user.role}</strong>. You
           can see <strong>{filteredWorkLogs.length}</strong> work log entries.
+          {user.role === "employee" && " You can add and edit your own logs."}
         </AlertDescription>
       </Alert>
 
@@ -215,6 +235,91 @@ export default function WorkLogsPage() {
           </Dialog>
         )}
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Work Log Entry</DialogTitle>
+            <DialogDescription>
+              Update your work log details
+            </DialogDescription>
+          </DialogHeader>
+          {editingLog && (
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-project">Project</Label>
+                <Select defaultValue={editingLog.projectId}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getActiveProjects().map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-start-time">Start Time</Label>
+                  <Input
+                    id="edit-start-time"
+                    type="time"
+                    defaultValue={editingLog.startTime}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-end-time">End Time</Label>
+                  <Input
+                    id="edit-end-time"
+                    type="time"
+                    defaultValue={editingLog.endTime}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-description">Work Description</Label>
+                <Textarea
+                  id="edit-description"
+                  defaultValue={editingLog.description}
+                  className="min-h-[100px]"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-status">Status</Label>
+                <Select
+                  defaultValue={editingLog.status
+                    .toLowerCase()
+                    .replace(" ", "-")}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="in-progress">In Progress</SelectItem>
+                    <SelectItem value="blocked">Blocked</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={() => setIsEditDialogOpen(false)}>
+              Update Work Log
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats */}
       <div className="grid gap-6 md:grid-cols-4">
@@ -307,13 +412,14 @@ export default function WorkLogsPage() {
                   <TableHead>Hours</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Status</TableHead>
+                  {user.role === "employee" && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredWorkLogs.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={user.role === "employee" ? 6 : 7}
+                      colSpan={user.role === "employee" ? 8 : 7}
                       className="text-center py-8 text-muted-foreground"
                     >
                       No work logs found
@@ -374,6 +480,21 @@ export default function WorkLogsPage() {
                           {log.status}
                         </Badge>
                       </TableCell>
+                      {user.role === "employee" && (
+                        <TableCell>
+                          {canEditLog(log) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditLog(log)}
+                              className="gap-2"
+                            >
+                              <Pencil className="h-4 w-4" />
+                              Edit
+                            </Button>
+                          )}
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))
                 )}

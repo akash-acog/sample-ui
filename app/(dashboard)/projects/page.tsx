@@ -1,7 +1,8 @@
 "use client";
 
 import { useRole } from "@/lib/role-context";
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -9,85 +10,54 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Plus,
-  Search,
-  Filter,
   FolderKanban,
   Users,
   Calendar,
-  Shield,
+  ArrowRight,
+  Plus,
 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { projects } from "@/lib/data/projects";
 import { employees } from "@/lib/data/employees";
 
 export default function ProjectsPage() {
   const { user } = useRole();
-  const [searchTerm, setSearchTerm] = useState("");
 
   if (!user) return null;
 
   // Filter projects based on role
   const filteredProjects = useMemo(() => {
-    let result = projects;
-
     switch (user.role) {
       case "admin":
       case "hr":
         // Admin and HR see all projects
-        result = projects;
-        break;
+        return projects;
 
       case "manager":
-        // Managers see projects they manage
-        result = projects.filter((proj) => proj.manager === user.name);
-        break;
+        // Managers see only their projects
+        return projects.filter((project) => project.manager === user.name);
 
       case "employee":
-        // Employees see projects they're assigned to
+        // Employees see projects they're allocated to
         const employee = employees.find((emp) => emp.email === user.email);
-        result = projects.filter((proj) =>
-          proj.team.includes(employee?.id || "")
-        );
-        break;
+        // For now showing all active projects since we don't have allocations in mock data
+        // In real app, filter by allocations
+        return projects.filter((project) => project.status === "Active");
+
+      default:
+        return [];
     }
-
-    // Apply search filter
-    if (searchTerm) {
-      result = result.filter(
-        (proj) =>
-          proj.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          proj.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    return result;
-  }, [user, searchTerm]);
-
-  const canCreateProject = user.role === "admin" || user.role === "manager";
-  const activeProjects = filteredProjects.filter((p) => p.status === "Active");
-  const completedProjects = filteredProjects.filter(
-    (p) => p.status === "Completed"
-  );
+  }, [user]);
 
   const getPageTitle = () => {
     switch (user.role) {
       case "employee":
         return "My Projects";
       case "manager":
-        return "Managed Projects";
+        return "My Managed Projects";
       default:
         return "All Projects";
     }
@@ -96,23 +66,31 @@ export default function ProjectsPage() {
   const getPageDescription = () => {
     switch (user.role) {
       case "employee":
-        return "Projects you are currently working on";
+        return "Projects you are currently allocated to";
       case "manager":
-        return "Projects under your management";
+        return "Projects you are managing";
       default:
-        return "All projects across the organization";
+        return "View and manage all projects in the organization";
     }
   };
+
+  // Group projects by status
+  const projectsByStatus = useMemo(() => {
+    return {
+      active: filteredProjects.filter((p) => p.status === "Active"),
+      planned: filteredProjects.filter((p) => p.status === "Planned"),
+      completed: filteredProjects.filter((p) => p.status === "Completed"),
+    };
+  }, [filteredProjects]);
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Role indicator */}
       <Alert className="border-primary/20 bg-primary/5">
-        <Shield className="h-4 w-4" />
+        <FolderKanban className="h-4 w-4" />
         <AlertDescription>
           Viewing as <strong className="capitalize">{user.role}</strong>. You
-          can see <strong>{filteredProjects.length}</strong> project
-          {filteredProjects.length !== 1 ? "s" : ""}.
+          can see <strong>{filteredProjects.length}</strong> projects.
         </AlertDescription>
       </Alert>
 
@@ -124,7 +102,7 @@ export default function ProjectsPage() {
           </h1>
           <p className="text-muted-foreground">{getPageDescription()}</p>
         </div>
-        {canCreateProject && (
+        {(user.role === "admin" || user.role === "manager") && (
           <Button className="gap-2 shadow-sm">
             <Plus className="h-4 w-4" />
             New Project
@@ -132,34 +110,20 @@ export default function ProjectsPage() {
         )}
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-6 md:grid-cols-4">
+      {/* Project Stats */}
+      <div className="grid gap-6 md:grid-cols-3">
         <Card className="border-border/50 shadow-soft">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
-                  Total Projects
+                  Active Projects
                 </p>
-                <p className="text-3xl font-bold">{filteredProjects.length}</p>
-              </div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-sm">
-                <FolderKanban className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 shadow-soft">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Active
+                <p className="text-3xl font-bold">
+                  {projectsByStatus.active.length}
                 </p>
-                <p className="text-3xl font-bold">{activeProjects.length}</p>
               </div>
-              <Badge variant="success" className="text-xs">
+              <Badge variant="default" className="text-xs">
                 In Progress
               </Badge>
             </div>
@@ -171,12 +135,14 @@ export default function ProjectsPage() {
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
-                  Completed
+                  Planned Projects
                 </p>
-                <p className="text-3xl font-bold">{completedProjects.length}</p>
+                <p className="text-3xl font-bold">
+                  {projectsByStatus.planned.length}
+                </p>
               </div>
               <Badge variant="secondary" className="text-xs">
-                Done
+                Upcoming
               </Badge>
             </div>
           </CardContent>
@@ -187,145 +153,207 @@ export default function ProjectsPage() {
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
-                  Avg Progress
+                  Completed Projects
                 </p>
                 <p className="text-3xl font-bold">
-                  {
-                    (
-                      filteredProjects.reduce((sum, p) => sum + p.progress, 0) /
-                      filteredProjects.length
-                    ).toFixed(0)
-                  }%
+                  {projectsByStatus.completed.length}
                 </p>
               </div>
-              <Badge variant="default" className="text-xs">
-                Overall
+              <Badge variant="success" className="text-xs">
+                Done
               </Badge>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Projects Table */}
-      <Card className="border-border/50 shadow-soft">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Project List</CardTitle>
-              <CardDescription>
-                Showing {filteredProjects.length} project
-                {filteredProjects.length !== 1 ? "s" : ""}
-              </CardDescription>
-            </div>
+      {/* Active Projects */}
+      {projectsByStatus.active.length > 0 && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold">Active Projects</h2>
+            <p className="text-sm text-muted-foreground">
+              Currently in progress
+            </p>
           </div>
-        </CardHeader>
-        <CardContent>
-          {/* Search and Filter */}
-          <div className="flex items-center gap-2 mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search projects..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button variant="outline" className="gap-2">
-              <Filter className="h-4 w-4" />
-              Filter
-            </Button>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {projectsByStatus.active.map((project) => (
+              <Link key={project.id} href={`/projects/${project.id}`}>
+                <Card className="border-border/50 shadow-soft hover:shadow-medium transition-shadow cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1 flex-1">
+                        <CardTitle className="text-lg">
+                          {project.name}
+                        </CardTitle>
+                        <CardDescription className="line-clamp-2">
+                          {project.description}
+                        </CardDescription>
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
+                          project.priority === "High" ||
+                          project.priority === "Critical"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
+                        {project.priority}
+                      </Badge>
+                      <Badge variant="outline">{project.type}</Badge>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Users className="h-4 w-4" />
+                        <span>{project.manager}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          {new Date(project.startDate).toLocaleDateString()} -{" "}
+                          {project.endDate
+                            ? new Date(project.endDate).toLocaleDateString()
+                            : "Ongoing"}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
           </div>
+        </div>
+      )}
 
-          {/* Table */}
-          <div className="rounded-lg border border-border/50 overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Project Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Progress</TableHead>
-                  <TableHead>Team Size</TableHead>
-                  {user.role !== "employee" && <TableHead>Manager</TableHead>}
-                  <TableHead>Start Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProjects.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={user.role === "employee" ? 5 : 6}
-                      className="text-center py-8 text-muted-foreground"
-                    >
-                      No projects found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredProjects.map((project) => (
-                    <TableRow key={project.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{project.name}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-1">
-                            {project.description}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            project.status === "Active"
-                              ? "success"
-                              : project.status === "Completed"
-                              ? "secondary"
-                              : "warning"
-                          }
-                        >
-                          {project.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden max-w-[100px]">
-                            <div
-                              className="h-full bg-primary transition-all"
-                              style={{ width: `${project.progress}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium">
-                            {project.progress}%
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Users className="h-4 w-4 text-muted-foreground" />
-                          <span>{project.team.length}</span>
-                        </div>
-                      </TableCell>
-                      {user.role !== "employee" && (
-                        <TableCell>{project.manager}</TableCell>
-                      )}
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          {new Date(project.startDate).toLocaleDateString(
-                            "en-US",
-                            {
-                              month: "short",
-                              year: "numeric",
-                            }
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+      {/* Planned Projects */}
+      {projectsByStatus.planned.length > 0 && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold">Planned Projects</h2>
+            <p className="text-sm text-muted-foreground">Upcoming projects</p>
           </div>
-        </CardContent>
-      </Card>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {projectsByStatus.planned.map((project) => (
+              <Link key={project.id} href={`/projects/${project.id}`}>
+                <Card className="border-border/50 shadow-soft hover:shadow-medium transition-shadow cursor-pointer">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1 flex-1">
+                        <CardTitle className="text-lg">
+                          {project.name}
+                        </CardTitle>
+                        <CardDescription className="line-clamp-2">
+                          {project.description}
+                        </CardDescription>
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
+                          project.priority === "High" ||
+                          project.priority === "Critical"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
+                        {project.priority}
+                      </Badge>
+                      <Badge variant="outline">{project.type}</Badge>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Users className="h-4 w-4" />
+                        <span>{project.manager}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          Starts{" "}
+                          {new Date(project.startDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Completed Projects */}
+      {projectsByStatus.completed.length > 0 && user.role !== "employee" && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold">Completed Projects</h2>
+            <p className="text-sm text-muted-foreground">Finished projects</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {projectsByStatus.completed.map((project) => (
+              <Link key={project.id} href={`/projects/${project.id}`}>
+                <Card className="border-border/50 shadow-soft hover:shadow-medium transition-shadow cursor-pointer opacity-75">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1 flex-1">
+                        <CardTitle className="text-lg">
+                          {project.name}
+                        </CardTitle>
+                        <CardDescription className="line-clamp-2">
+                          {project.description}
+                        </CardDescription>
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="success">Completed</Badge>
+                      <Badge variant="outline">{project.type}</Badge>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Users className="h-4 w-4" />
+                        <span>{project.manager}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          Completed{" "}
+                          {project.endDate
+                            ? new Date(project.endDate).toLocaleDateString()
+                            : "N/A"}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {filteredProjects.length === 0 && (
+        <Card className="border-border/50 shadow-soft">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <FolderKanban className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No projects found</h3>
+            <p className="text-sm text-muted-foreground text-center">
+              {user.role === "employee"
+                ? "You are not currently allocated to any projects."
+                : "No projects available. Create one to get started."}
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
