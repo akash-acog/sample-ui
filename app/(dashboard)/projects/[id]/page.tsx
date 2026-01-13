@@ -128,23 +128,6 @@ export default function ProjectDetailPage({
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Priority</span>
-                <Badge
-                  variant={
-                    project.priority === "High" ||
-                    project.priority === "Critical"
-                      ? "destructive"
-                      : "secondary"
-                  }
-                >
-                  {project.priority}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Type</span>
-                <Badge variant="outline">{project.type}</Badge>
-              </div>
-              <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Manager</span>
                 <span className="text-sm font-medium">{project.manager}</span>
               </div>
@@ -166,6 +149,12 @@ export default function ProjectDetailPage({
                   </span>
                 </div>
               )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  Progress
+                </span>
+                <Badge variant="secondary">{project.progress}%</Badge>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -202,7 +191,7 @@ export default function ProjectDetailPage({
                 <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">
-                      Progress
+                      Days Elapsed
                     </span>
                     <span className="text-sm font-medium">
                       {progress.toFixed(0)}%
