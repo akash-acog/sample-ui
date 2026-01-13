@@ -56,3 +56,34 @@ export const roleConfig = {
 export function canAccessPage(role: UserRole, page: string): boolean {
   return roleConfig[role]?.pages.includes(page) ?? false;
 }
+
+export function hasPermission(role: UserRole, permission: string): boolean {
+  // Define permission mappings for different roles
+  const permissions: Record<UserRole, string[]> = {
+    admin: [
+      "manage_allocations",
+      "manage_employees",
+      "manage_projects",
+      "view_analytics",
+      "manage_settings",
+    ],
+    hr: [
+      "manage_allocations",
+      "manage_employees",
+      "view_projects",
+      "view_analytics",
+    ],
+    manager: [
+      "manage_allocations",
+      "view_employees",
+      "view_projects",
+      "view_analytics",
+    ],
+    employee: [
+      "view_own_data",
+      "view_projects",
+    ],
+  };
+
+  return permissions[role]?.includes(permission) ?? false;
+}
