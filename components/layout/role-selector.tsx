@@ -2,9 +2,17 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRole } from "@/lib/role-context"
-import { ROLE_CONFIGURATIONS, type UserRole } from "@/lib/role-config"
+import { type UserRole } from "@/lib/role-config"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, User } from "lucide-react"
+
+// Role descriptions
+const roleDescriptions: Record<UserRole, string> = {
+  admin: "Full system access and control",
+  hr: "HR management and employee data",
+  manager: "Team and project management",
+  employee: "Personal data and work logs",
+}
 
 export function RoleSelector() {
   const { user, switchRole } = useRole()
@@ -22,7 +30,7 @@ export function RoleSelector() {
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  const roles = (Object.keys(ROLE_CONFIGURATIONS) as UserRole[]).sort()
+  const roles: UserRole[] = ["admin", "hr", "manager", "employee"]
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -66,7 +74,7 @@ export function RoleSelector() {
                     <span className="capitalize">{role}</span>
                   </div>
                   <div className="text-xs mt-1 opacity-80">
-                    {ROLE_CONFIGURATIONS[role].description}
+                    {roleDescriptions[role]}
                   </div>
                 </button>
               ))}
