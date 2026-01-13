@@ -98,7 +98,7 @@ export default function ProjectsPage() {
   const projectsByStatus = useMemo(() => {
     return {
       active: filteredProjects.filter((p) => p.status === "Active"),
-      planned: filteredProjects.filter((p) => p.status === "Planned"),
+      onHold: filteredProjects.filter((p) => p.status === "On Hold"),
       completed: filteredProjects.filter((p) => p.status === "Completed"),
     };
   }, [filteredProjects]);
@@ -166,37 +166,6 @@ export default function ProjectsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="type">Project Type *</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="web">Web Application</SelectItem>
-                        <SelectItem value="mobile">Mobile App</SelectItem>
-                        <SelectItem value="internal">Internal Tool</SelectItem>
-                        <SelectItem value="client">Client Project</SelectItem>
-                        <SelectItem value="research">Research & Development</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="priority">Priority *</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select priority" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="critical">Critical</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="low">Low</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
                     <Label htmlFor="manager">Project Manager *</Label>
                     <Select>
                       <SelectTrigger>
@@ -220,14 +189,15 @@ export default function ProjectsPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="status">Status *</Label>
-                    <Select defaultValue="planned">
+                    <Select defaultValue="on-hold">
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="planned">Planned</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="on-hold">On Hold</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -290,14 +260,14 @@ export default function ProjectsPage() {
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
-                  Planned Projects
+                  On Hold
                 </p>
                 <p className="text-3xl font-bold">
-                  {projectsByStatus.planned.length}
+                  {projectsByStatus.onHold.length}
                 </p>
               </div>
               <Badge variant="secondary" className="text-xs">
-                Upcoming
+                Paused
               </Badge>
             </div>
           </CardContent>
@@ -350,17 +320,9 @@ export default function ProjectsPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <Badge
-                        variant={
-                          project.priority === "High" ||
-                          project.priority === "Critical"
-                            ? "destructive"
-                            : "secondary"
-                        }
-                      >
-                        {project.priority}
+                      <Badge variant="secondary">
+                        {project.progress}% Complete
                       </Badge>
-                      <Badge variant="outline">{project.type}</Badge>
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
@@ -385,15 +347,15 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {/* Planned Projects */}
-      {projectsByStatus.planned.length > 0 && (
+      {/* On Hold Projects */}
+      {projectsByStatus.onHold.length > 0 && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-xl font-semibold">Planned Projects</h2>
-            <p className="text-sm text-muted-foreground">Upcoming projects</p>
+            <h2 className="text-xl font-semibold">On Hold Projects</h2>
+            <p className="text-sm text-muted-foreground">Paused projects</p>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {projectsByStatus.planned.map((project) => (
+            {projectsByStatus.onHold.map((project) => (
               <Link key={project.id} href={`/projects/${project.id}`}>
                 <Card className="border-border/50 shadow-soft hover:shadow-medium transition-shadow cursor-pointer">
                   <CardHeader>
@@ -411,17 +373,10 @@ export default function ProjectsPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <Badge
-                        variant={
-                          project.priority === "High" ||
-                          project.priority === "Critical"
-                            ? "destructive"
-                            : "secondary"
-                        }
-                      >
-                        {project.priority}
+                      <Badge variant="secondary">On Hold</Badge>
+                      <Badge variant="outline">
+                        {project.progress}% Complete
                       </Badge>
-                      <Badge variant="outline">{project.type}</Badge>
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
@@ -431,7 +386,7 @@ export default function ProjectsPage() {
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Calendar className="h-4 w-4" />
                         <span>
-                          Starts{" "}
+                          Started{" "}
                           {new Date(project.startDate).toLocaleDateString()}
                         </span>
                       </div>
@@ -471,7 +426,6 @@ export default function ProjectsPage() {
                   <CardContent className="space-y-4">
                     <div className="flex items-center gap-2">
                       <Badge variant="success">Completed</Badge>
-                      <Badge variant="outline">{project.type}</Badge>
                     </div>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center gap-2 text-muted-foreground">
