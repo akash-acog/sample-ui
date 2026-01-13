@@ -14,7 +14,7 @@ interface User {
 
 interface RoleContextType {
   user: User | null
-  setUser: (user: User) => void
+  setUser: (user: User | null) => void
   switchRole: (role: UserRole) => void
 }
 
