@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { canAccessPage, ROLE_CONFIGURATIONS, type UserRole } from "@/lib/role-config"
+import { canAccessPage, type UserRole } from "@/lib/role-config"
 import { Users, Briefcase, Activity, FileText, BarChart3, Settings, User, CheckSquare, Award, Zap } from "lucide-react"
 
 interface NavigationProps {
@@ -26,6 +26,9 @@ export function Navigation({ currentPage, onNavigate, userRole }: NavigationProp
 
   const navItems = allNavItems.filter((item) => canAccessPage(userRole, item.id))
 
+  // Format role label for display
+  const roleLabel = userRole.charAt(0).toUpperCase() + userRole.slice(1)
+
   return (
     <aside className="w-64 h-screen border-r border-border bg-gradient-to-b from-sidebar via-sidebar to-sidebar/95 transition-all duration-300 fixed left-0 top-0 flex flex-col overflow-hidden">
       <div className="border-b border-sidebar-border bg-gradient-to-r from-sidebar-primary/10 to-transparent p-6">
@@ -39,7 +42,7 @@ export function Navigation({ currentPage, onNavigate, userRole }: NavigationProp
             </h1>
           </div>
           <p className="text-xs font-medium text-sidebar-foreground/60 uppercase tracking-wide">
-            {ROLE_CONFIGURATIONS[userRole].label}
+            {roleLabel}
           </p>
         </div>
       </div>
