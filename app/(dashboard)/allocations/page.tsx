@@ -246,7 +246,7 @@ export default function AllocationsPage() {
                     <SelectContent>
                       {projects.filter(p => p.status !== "Completed").map((proj) => (
                         <SelectItem key={proj.id} value={proj.id}>
-                          {proj.name} ({proj.code})
+                          {proj.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
