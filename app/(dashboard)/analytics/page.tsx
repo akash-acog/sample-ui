@@ -498,7 +498,7 @@ export default function AnalyticsPage() {
                   <TableRow>
                     <TableHead>Project</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Priority</TableHead>
+                    <TableHead>Progress</TableHead>
                     <TableHead>Total Hours</TableHead>
                     <TableHead>Log Count</TableHead>
                   </TableRow>
@@ -523,15 +523,8 @@ export default function AnalyticsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            project.priority === "High" ||
-                            project.priority === "Critical"
-                              ? "destructive"
-                              : "secondary"
-                          }
-                        >
-                          {project.priority}
+                        <Badge variant="secondary">
+                          {project.progress}%
                         </Badge>
                       </TableCell>
                       <TableCell>{project.totalHours}h</TableCell>
